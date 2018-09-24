@@ -1870,7 +1870,7 @@ declare namespace ts {
         isSourceFileFromExternalLibrary(file: SourceFile): boolean;
         isSourceFileDefaultLibrary(file: SourceFile): boolean;
         getProjectReferences(): ReadonlyArray<ProjectReference> | undefined;
-        getResolvedProjectReferences(): ReadonlyArray<ResolvedProjectReference | undefined> | undefined;
+        getResolvedProjectReferences(): (ResolvedProjectReference | undefined)[] | undefined;
     }
     interface ResolvedProjectReference {
         commandLine: ParsedCommandLine;
@@ -3078,6 +3078,16 @@ declare namespace ts {
     interface PseudoBigInt {
         negative: boolean;
         base10Value: string;
+    }
+    interface UserPreferences {
+        readonly disableSuggestions?: boolean;
+        readonly quotePreference?: "double" | "single";
+        readonly includeCompletionsForModuleExports?: boolean;
+        readonly includeCompletionsWithInsertText?: boolean;
+        readonly importModuleSpecifierPreference?: "relative" | "non-relative";
+        /** Determines whether we import `foo/index.ts` as "foo", "foo/index", or "foo/index.js" */
+        readonly importModuleSpecifierEnding?: "minimal" | "index" | "js";
+        readonly allowTextChangesInNewFiles?: boolean;
     }
 }
 declare function setTimeout(handler: (...args: any[]) => void, timeout: number): any;
@@ -4435,11 +4445,13 @@ declare namespace ts {
         /** If provided, will be used to reset existing delayed compilation */
         clearTimeout?(timeoutId: any): void;
     }
-    interface ProgramHost<T extends BuilderProgram> {
+    interface WatchCompilerHost<T extends BuilderProgram> extends WatchHost {
         /**
          * Used to create the program when need for program creation or recreation detected
          */
         createProgram: CreateProgram<T>;
+        /** If provided, callback to invoke after every new program creation */
+        afterProgramCreate?(program: T): void;
         useCaseSensitiveFileNames(): boolean;
         getNewLine(): string;
         getCurrentDirectory(): string;
@@ -4471,11 +4483,7 @@ declare namespace ts {
         /** If provided, used to resolve the module names, otherwise typescript's default module resolution */
         resolveModuleNames?(moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: ResolvedProjectReference): (ResolvedModule | undefined)[];
         /** If provided, used to resolve type reference directives, otherwise typescript's default resolution */
-        resolveTypeReferenceDirectives?(typeReferenceDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[];
-    }
-    interface WatchCompilerHost<T extends BuilderProgram> extends ProgramHost<T>, WatchHost {
-        /** If provided, callback to invoke after every new program creation */
-        afterProgramCreate?(program: T): void;
+        resolveTypeReferenceDirectives?(typeReferenceDirectiveNames: string[], containingFile: string): ResolvedTypeReferenceDirective[];
     }
     /**
      * Host to create watch with root files and options
@@ -4752,9 +4760,6 @@ declare namespace ts {
         installPackage?(options: InstallPackageOptions): Promise<ApplyCodeActionCommandResult>;
         writeFile?(fileName: string, content: string): void;
     }
-    type WithMetadata<T> = T & {
-        metadata?: unknown;
-    };
     interface LanguageService {
         cleanupSemanticCache(): void;
         getSyntacticDiagnostics(fileName: string): DiagnosticWithLocation[];
@@ -5205,14 +5210,14 @@ declare namespace ts {
         documentation?: SymbolDisplayPart[];
         tags?: JSDocTagInfo[];
     }
-    type RenameInfo = RenameInfoSuccess | RenameInfoFailure;
-    interface RenameInfoSuccess {
-        canRename: true;
+    interface RenameInfo {
+        canRename: boolean;
         /**
          * File or directory to rename.
          * If set, `getEditsForFileRename` should be called instead of `findRenameLocations`.
          */
         fileToRename?: string;
+        localizedErrorMessage?: string;
         displayName: string;
         fullDisplayName: string;
         kind: ScriptElementKind;
@@ -6565,6 +6570,10 @@ declare namespace ts.server.protocol {
          */
         fileToRename?: string;
         /**
+         * Error message if item can not be renamed.
+         */
+        fileToRename?: string;
+        /**
          * Display name of the item to be renamed.
          */
         displayName: string;
@@ -6582,13 +6591,6 @@ declare namespace ts.server.protocol {
         kindModifiers: string;
         /** Span of text to rename. */
         triggerSpan: TextSpan;
-    }
-    interface RenameInfoFailure {
-        canRename: false;
-        /**
-         * Error message if item can not be renamed.
-         */
-        localizedErrorMessage: string;
     }
     /**
      *  A group of text spans, all in 'file'.
@@ -7659,26 +7661,6 @@ declare namespace ts.server.protocol {
          */
         openFiles: string[];
     }
-    type ProjectLoadingStartEventName = "projectLoadingStart";
-    interface ProjectLoadingStartEvent extends Event {
-        event: ProjectLoadingStartEventName;
-        body: ProjectLoadingStartEventBody;
-    }
-    interface ProjectLoadingStartEventBody {
-        /** name of the project */
-        projectName: string;
-        /** reason for loading */
-        reason: string;
-    }
-    type ProjectLoadingFinishEventName = "projectLoadingFinish";
-    interface ProjectLoadingFinishEvent extends Event {
-        event: ProjectLoadingFinishEventName;
-        body: ProjectLoadingFinishEventBody;
-    }
-    interface ProjectLoadingFinishEventBody {
-        /** name of the project */
-        projectName: string;
-    }
     type SurveyReadyEventName = "surveyReady";
     interface SurveyReadyEvent extends Event {
         event: SurveyReadyEventName;
@@ -8024,8 +8006,6 @@ declare namespace ts.server.protocol {
         readonly importModuleSpecifierPreference?: "relative" | "non-relative";
         readonly allowTextChangesInNewFiles?: boolean;
         readonly lazyConfiguredProjectsFromExternalProject?: boolean;
-        readonly providePrefixAndSuffixTextForRename?: boolean;
-        readonly allowRenameOfImportPath?: boolean;
     }
     interface CompilerOptions {
         allowJs?: boolean;
@@ -8360,9 +8340,8 @@ declare namespace ts.server {
         filesToString(writeProjectFileNames: boolean): string;
         setCompilerOptions(compilerOptions: CompilerOptions): void;
         protected removeRoot(info: ScriptInfo): void;
-        protected enableGlobalPlugins(options: CompilerOptions, pluginConfigOverrides: Map<any> | undefined): void;
-        protected enablePlugin(pluginConfigEntry: PluginImport, searchPaths: string[], pluginConfigOverrides: Map<any> | undefined): void;
-        private enableProxy;
+        protected enableGlobalPlugins(options: CompilerOptions): void;
+        protected enablePlugin(pluginConfigEntry: PluginImport, searchPaths: string[]): void;
         /** Starts a new check for diagnostics. Call this if some file has updated that would cause diagnostics to be changed. */
         refreshDiagnostics(): void;
     }
@@ -8429,7 +8408,7 @@ declare namespace ts.server {
         excludedFiles: ReadonlyArray<NormalizedPath>;
         private typeAcquisition;
         updateGraph(): boolean;
-        getExcludedFiles(): readonly NormalizedPath[];
+        getExcludedFiles(): ReadonlyArray<NormalizedPath>;
         getTypeAcquisition(): TypeAcquisition;
         setTypeAcquisition(newTypeAcquisition: TypeAcquisition): void;
     }
@@ -8437,8 +8416,7 @@ declare namespace ts.server {
 declare namespace ts.server {
     const maxProgramSizeForNonTsFiles: number;
     const ProjectsUpdatedInBackgroundEvent = "projectsUpdatedInBackground";
-    const ProjectLoadingStartEvent = "projectLoadingStart";
-    const ProjectLoadingFinishEvent = "projectLoadingFinish";
+    const SurveyReady = "surveyReady";
     const LargeFileReferencedEvent = "largeFileReferenced";
     const ConfigFileDiagEvent = "configFileDiag";
     const ProjectLanguageServiceStateEvent = "projectLanguageServiceState";
@@ -8450,17 +8428,10 @@ declare namespace ts.server {
             openFiles: string[];
         };
     }
-    interface ProjectLoadingStartEvent {
-        eventName: typeof ProjectLoadingStartEvent;
+    interface SurveyReady {
+        eventName: typeof SurveyReady;
         data: {
-            project: Project;
-            reason: string;
-        };
-    }
-    interface ProjectLoadingFinishEvent {
-        eventName: typeof ProjectLoadingFinishEvent;
-        data: {
-            project: Project;
+            surveyId: string;
         };
     }
     interface LargeFileReferencedEvent {
@@ -8547,7 +8518,7 @@ declare namespace ts.server {
     interface OpenFileInfo {
         readonly checkJs: boolean;
     }
-    type ProjectServiceEvent = LargeFileReferencedEvent | ProjectsUpdatedInBackgroundEvent | ProjectLoadingStartEvent | ProjectLoadingFinishEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent | OpenFileInfoTelemetryEvent;
+    type ProjectServiceEvent = LargeFileReferencedEvent | SurveyReady | ProjectsUpdatedInBackgroundEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent | OpenFileInfoTelemetryEvent;
     type ProjectServiceEventHandler = (event: ProjectServiceEvent) => void;
     interface SafeList {
         [name: string]: {
@@ -8593,6 +8564,10 @@ declare namespace ts.server {
         syntaxOnly?: boolean;
     }
     class ProjectService {
+        /**
+         * Container of all known scripts
+         */
+        private readonly filenameToScriptInfo;
         private readonly scriptInfoInNodeModulesWatchers;
         /**
          * Contains all the deleted script info's version information so that
@@ -8664,6 +8639,8 @@ declare namespace ts.server {
         readonly syntaxOnly?: boolean;
         /** Tracks projects that we have already sent telemetry for. */
         private readonly seenProjects;
+        /** Tracks projects that we have already sent survey events for. */
+        private readonly seenSurveyProjects;
         constructor(opts: ProjectServiceOptions);
         toPath(fileName: string): Path;
         private loadTypesMap;

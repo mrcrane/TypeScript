@@ -845,6 +845,10 @@ declare namespace ts.server.protocol {
          */
         fileToRename?: string;
         /**
+         * Error message if item can not be renamed.
+         */
+        fileToRename?: string;
+        /**
          * Display name of the item to be renamed.
          */
         displayName: string;
@@ -862,13 +866,6 @@ declare namespace ts.server.protocol {
         kindModifiers: string;
         /** Span of text to rename. */
         triggerSpan: TextSpan;
-    }
-    interface RenameInfoFailure {
-        canRename: false;
-        /**
-         * Error message if item can not be renamed.
-         */
-        localizedErrorMessage: string;
     }
     /**
      *  A group of text spans, all in 'file'.
@@ -1939,26 +1936,6 @@ declare namespace ts.server.protocol {
          */
         openFiles: string[];
     }
-    type ProjectLoadingStartEventName = "projectLoadingStart";
-    interface ProjectLoadingStartEvent extends Event {
-        event: ProjectLoadingStartEventName;
-        body: ProjectLoadingStartEventBody;
-    }
-    interface ProjectLoadingStartEventBody {
-        /** name of the project */
-        projectName: string;
-        /** reason for loading */
-        reason: string;
-    }
-    type ProjectLoadingFinishEventName = "projectLoadingFinish";
-    interface ProjectLoadingFinishEvent extends Event {
-        event: ProjectLoadingFinishEventName;
-        body: ProjectLoadingFinishEventBody;
-    }
-    interface ProjectLoadingFinishEventBody {
-        /** name of the project */
-        projectName: string;
-    }
     type SurveyReadyEventName = "surveyReady";
     interface SurveyReadyEvent extends Event {
         event: SurveyReadyEventName;
@@ -2304,8 +2281,6 @@ declare namespace ts.server.protocol {
         readonly importModuleSpecifierPreference?: "relative" | "non-relative";
         readonly allowTextChangesInNewFiles?: boolean;
         readonly lazyConfiguredProjectsFromExternalProject?: boolean;
-        readonly providePrefixAndSuffixTextForRename?: boolean;
-        readonly allowRenameOfImportPath?: boolean;
     }
     interface CompilerOptions {
         allowJs?: boolean;
