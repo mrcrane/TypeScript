@@ -5365,9 +5365,6 @@ declare namespace ts {
         canRename: false;
         localizedErrorMessage: string;
     }
-    interface RenameInfoOptions {
-        readonly allowRenameOfImportPath?: boolean;
-    }
     interface SignatureHelpParameter {
         name: string;
         documentation: SymbolDisplayPart[];

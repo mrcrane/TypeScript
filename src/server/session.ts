@@ -1269,7 +1269,7 @@ namespace ts.server {
             if (info.canRename) {
                 const { canRename, fileToRename, displayName, fullDisplayName, kind, kindModifiers, triggerSpan } = info;
                 return identity<protocol.RenameInfoSuccess>(
-                    { canRename, fileToRename, displayName, fullDisplayName, kind, kindModifiers, triggerSpan: toProcolTextSpan(triggerSpan, scriptInfo) });
+                    { canRename, fileToRename, displayName, fullDisplayName, kind, kindModifiers, triggerSpan: this.toLocationTextSpan(triggerSpan, scriptInfo) });
             }
             else {
                 return info;

@@ -431,17 +431,13 @@ namespace ts.server {
             return renameInfo;
         }
 
-        getSmartSelectionRange() {
-            return notImplemented();
-        }
-
         findRenameLocations(fileName: string, position: number, findInStrings: boolean, findInComments: boolean): RenameLocation[] {
             if (!this.lastRenameEntry ||
                 this.lastRenameEntry.inputs.fileName !== fileName ||
                 this.lastRenameEntry.inputs.position !== position ||
                 this.lastRenameEntry.inputs.findInStrings !== findInStrings ||
                 this.lastRenameEntry.inputs.findInComments !== findInComments) {
-                this.getRenameInfo(fileName, position, { allowRenameOfImportPath: true }, findInStrings, findInComments);
+                this.getRenameInfo(fileName, position, findInStrings, findInComments);
             }
 
             return this.lastRenameEntry!.locations;

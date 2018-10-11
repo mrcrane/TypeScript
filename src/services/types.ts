@@ -847,10 +847,6 @@ namespace ts {
         localizedErrorMessage: string;
     }
 
-    export interface RenameInfoOptions {
-        readonly allowRenameOfImportPath?: boolean;
-    }
-
     export interface SignatureHelpParameter {
         name: string;
         documentation: SymbolDisplayPart[];
