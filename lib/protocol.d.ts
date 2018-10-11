@@ -845,10 +845,6 @@ declare namespace ts.server.protocol {
          */
         fileToRename?: string;
         /**
-         * Error message if item can not be renamed.
-         */
-        fileToRename?: string;
-        /**
          * Display name of the item to be renamed.
          */
         displayName: string;
@@ -866,6 +862,13 @@ declare namespace ts.server.protocol {
         kindModifiers: string;
         /** Span of text to rename. */
         triggerSpan: TextSpan;
+    }
+    interface RenameInfoFailure {
+        canRename: false;
+        /**
+         * Error message if item can not be renamed.
+         */
+        localizedErrorMessage: string;
     }
     /**
      *  A group of text spans, all in 'file'.
