@@ -24,7 +24,7 @@ namespace ts {
         | SyntaxKind.CommaToken
         | SyntaxKind.DotToken
         | SyntaxKind.Identifier
-        | SyntaxKind.BacktickToken
+        | SyntaxKind.NoSubstitutionTemplateLiteral
         | SyntaxKind.Unknown
         | KeywordSyntaxKind;
 
@@ -32,7 +32,6 @@ namespace ts {
         | SyntaxKind.AbstractKeyword
         | SyntaxKind.AnyKeyword
         | SyntaxKind.AsKeyword
-        | SyntaxKind.BigIntKeyword
         | SyntaxKind.BooleanKeyword
         | SyntaxKind.BreakKeyword
         | SyntaxKind.CaseKeyword

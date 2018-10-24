@@ -6606,7 +6606,7 @@ namespace ts {
                     }
                 }
 
-                function skipWhitespaceOrAsterisk(): string {
+                function skipWhitespaceOrAsterisk(): void {
                     if (token() === SyntaxKind.WhitespaceTrivia || token() === SyntaxKind.NewLineTrivia) {
                         if (lookAhead(isNextNonwhitespaceTokenEndOfFile)) {
                             return ""; // Don't skip whitespace prior to EoF (or end of comment) - that shouldn't be included in any node's range
@@ -6626,7 +6626,7 @@ namespace ts {
                         else if (token() === SyntaxKind.AsteriskToken) {
                             precedingLineBreak = false;
                         }
-                        nextTokenJSDoc();
+                        nextJSDocToken();
                     }
                     return seenLineBreak ? indentText : "";
                 }
@@ -6637,7 +6637,7 @@ namespace ts {
                     nextTokenJSDoc();
 
                     const tagName = parseJSDocIdentifierName(/*message*/ undefined);
-                    const indentText = skipWhitespaceOrAsterisk();
+                    skipWhitespaceOrAsterisk();
 
                     let tag: JSDocTag | undefined;
                     switch (tagName.escapedText) {
@@ -7294,7 +7294,7 @@ namespace ts {
                     result.escapedText = escapeLeadingUnderscores(scanner.getTokenText());
                     finishNode(result, end);
 
-                    nextTokenJSDoc();
+                    nextJSDocToken();
                     return result;
                 }
             }

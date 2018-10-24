@@ -73,7 +73,7 @@ namespace ts {
                 case "compilerOptions":
                     forEachProperty(property.initializer, (property, propertyName) => {
                         const option = getOptionFromName(propertyName);
-                        if (option && (option.isFilePath || option.type === "list" && option.element.isFilePath)) {
+                        if (option && (option.isFilePath || option.type === "list" && (option as CommandLineOptionOfListType).element.isFilePath)) { // tslint:disable-line no-unnecessary-type-assertion
                             updatePaths(property);
                         }
                         else if (propertyName === "paths") {

@@ -1088,7 +1088,7 @@ namespace ts {
                                     i++;
                                     break;
                                 case "list":
-                                    const result = parseListTypeOption(opt, args[i], errors);
+                                    const result = parseListTypeOption(<CommandLineOptionOfListType>opt, args[i], errors); // tslint:disable-line no-unnecessary-type-assertion
                                     options[opt.name] = result || [];
                                     if (result) {
                                         i++;
@@ -1789,21 +1789,16 @@ namespace ts {
         return config;
     }
 
-    function filterSameAsDefaultInclude(specs: ReadonlyArray<string> | undefined) {
-        if (!length(specs)) return undefined;
-        if (length(specs) !== 1) return specs;
-        if (specs![0] === "**/*") return undefined;
-        return specs;
-    }
-
-    function matchesSpecs(path: string, includeSpecs: ReadonlyArray<string> | undefined, excludeSpecs: ReadonlyArray<string> | undefined): (path: string) => boolean {
-        if (!includeSpecs) return _ => true;
-        const patterns = getFileMatcherPatterns(path, excludeSpecs, includeSpecs, sys.useCaseSensitiveFileNames, sys.getCurrentDirectory());
-        const excludeRe = patterns.excludePattern && getRegexFromPattern(patterns.excludePattern, sys.useCaseSensitiveFileNames);
-        const includeRe = patterns.includeFilePattern && getRegexFromPattern(patterns.includeFilePattern, sys.useCaseSensitiveFileNames);
-        if (includeRe) {
-            if (excludeRe) {
-                return path => !(includeRe.test(path) && !excludeRe.test(path));
+        function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption): Map<string | number> | undefined {
+            if (optionDefinition.type === "string" || optionDefinition.type === "number" || optionDefinition.type === "boolean") {
+                // this is of a type CommandLineOptionOfPrimitiveType
+                return undefined;
+            }
+            else if (optionDefinition.type === "list") {
+                return getCustomTypeMapOfCommandLineOption((<CommandLineOptionOfListType>optionDefinition).element); // tslint:disable-line no-unnecessary-type-assertion
+            }
+            else {
+                return (<CommandLineOptionOfCustomType>optionDefinition).type;
             }
             return path => !includeRe.test(path);
         }
@@ -1900,9 +1895,7 @@ namespace ts {
                 case "object":
                     return {};
                 default:
-                    const iterResult = option.type.keys().next();
-                    if (!iterResult.done) return iterResult.value;
-                    return Debug.fail("Expected 'option.type' to have entries.");
+                    return (option as CommandLineOptionOfCustomType).type.keys().next().value; // tslint:disable-line no-unnecessary-type-assertion
             }
         }
 
@@ -2533,7 +2526,7 @@ namespace ts {
     function normalizeOptionValue(option: CommandLineOption, basePath: string, value: any): CompilerOptionsValue {
         if (isNullOrUndefined(value)) return undefined;
         if (option.type === "list") {
-            const listOption = option;
+            const listOption = <CommandLineOptionOfListType>option; // tslint:disable-line no-unnecessary-type-assertion
             if (listOption.element.isFilePath || !isString(listOption.element.type)) {
                 return <CompilerOptionsValue>filter(map(value, v => normalizeOptionValue(listOption.element, basePath, v)), v => !!v);
             }
@@ -2940,7 +2933,7 @@ namespace ts {
             case "boolean":
                 return typeof value === "boolean" ? value : "";
             case "list":
-                const elementType = option.element;
+                const elementType = (option as CommandLineOptionOfListType).element; // tslint:disable-line no-unnecessary-type-assertion
                 return isArray(value) ? value.map(v => getOptionValueWithEmptyStrings(v, elementType)) : "";
             default:
                 return forEachEntry(option.type, (optionEnumValue, optionStringValue) => {

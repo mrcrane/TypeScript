@@ -65,7 +65,6 @@ namespace ts {
         abstract: SyntaxKind.AbstractKeyword,
         any: SyntaxKind.AnyKeyword,
         as: SyntaxKind.AsKeyword,
-        bigint: SyntaxKind.BigIntKeyword,
         boolean: SyntaxKind.BooleanKeyword,
         break: SyntaxKind.BreakKeyword,
         case: SyntaxKind.CaseKeyword,

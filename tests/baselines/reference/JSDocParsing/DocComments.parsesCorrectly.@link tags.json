@@ -9,8 +9,11 @@
             "kind": "JSDocTag",
             "pos": 63,
             "end": 68,
-            "modifierFlagsCache": 0,
-            "transformFlags": 0,
+            "atToken": {
+                "kind": "AtToken",
+                "pos": 63,
+                "end": 64
+            },
             "tagName": {
                 "kind": "Identifier",
                 "pos": 64,
