@@ -5,7 +5,7 @@ namespace ts {
     /** The version of the TypeScript compiler release */
     export const version = `${versionMajorMinor}.0-dev`;
 
-    export const etwLogger:typeof import("tsetwlog") = require("tsetwlog");
+    export const etwLogger:typeof import("../../tsetwlog") = require("../../tsetwlog");
     if (etwLogger) etwLogger.logInfoEvent(`Starting TypeScript v${versionMajorMinor} with command line: ${JSON.stringify(process.argv)}`);
 }
 

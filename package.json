@@ -111,7 +111,5 @@
         "os": false,
         "path": false
     },
-    "dependencies": {
-        "tsetwlog": "file:../tsetwlog"
-    }
+    "dependencies": {}
 }

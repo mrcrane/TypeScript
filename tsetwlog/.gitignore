@@ -1,0 +1,9 @@
+*.sln
+*.user
+/.vs/
+/Debug/
+/Release/
+*.iobj
+*.ipdb
+*.pdb
+*.map
